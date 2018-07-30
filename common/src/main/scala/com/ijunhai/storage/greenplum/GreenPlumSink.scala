@@ -2,14 +2,15 @@ package com.ijunhai.storage.greenplum
 
 import java.sql.{Connection, PreparedStatement, ResultSet, SQLException, Timestamp}
 
+import com.ijunhai.common.TimeUtil
 import com.ijunhai.common.logsystem.JunhaiLog
 import org.bson.Document
 import org.postgresql.util.PSQLException
 
 class GreenPlumSink(getConn: () => Connection) extends Serializable {
   def insertBatch(doc: Iterable[Document], table: String): Unit = {
-    var ps: PreparedStatement = null;
-    doc.foreach(document => {
+    var ps: PreparedStatement = null
+    doc.foreach(f = document => {
       if (ps == null) {
         var sqlKey = ""
         var values = ""
@@ -18,6 +19,7 @@ class GreenPlumSink(getConn: () => Connection) extends Serializable {
           sqlKey += key + ","
           values += "?,"
         }
+        //去掉最后一个逗号
         sqlKey = sqlKey.substring(0, sqlKey.length - 1)
         values = values.substring(0, values.length - 1)
         val sql = s"insert into $table ($sqlKey) values($values)"
@@ -26,18 +28,18 @@ class GreenPlumSink(getConn: () => Connection) extends Serializable {
       var index = 1
       for (key <- document.keySet()) {
         document.get(key) match {
-          case value:Integer =>
-            ps.setInt(index,value)
-          case value:java.lang.Long =>
-            ps.setLong(index,value)
-          case value:String =>
-            ps.setString(index,value)
-          case value:java.lang.Double=>
-            ps.setDouble(index,value)
-          case value:java.sql.Date =>
-            ps.setTimestamp(index,new Timestamp(value.getTime))
+          case value: Integer =>
+            ps.setInt(index, value)
+          case value: java.lang.Long =>
+            ps.setLong(index, value)
+          case value: String =>
+            ps.setString(index, value)
+          case value: java.lang.Double =>
+            ps.setDouble(index, value)
+          case value: java.sql.Date =>
+            ps.setTimestamp(index, new Timestamp(value.getTime))
           case _ =>
-            ps.setObject(index,document.get(key))
+            ps.setObject(index, document.get(key))
         }
         index += 1
       }
@@ -46,17 +48,56 @@ class GreenPlumSink(getConn: () => Connection) extends Serializable {
     try {
       ps.executeBatch()
     } catch {
-      case e :PSQLException=>
+      case e: PSQLException =>
         println(e.printStackTrace())
     }
-
   }
 
   lazy val connection = getConn()
 
-  def insert(sql: String, database: String): Int = {
+  def insert(document: Document, table: String): Document = {
+    var sqlKey = ""
+    var values = ""
+    val keys = document.keySet()
+    for (key <- keys) {
+      sqlKey += key + ","
+      document.get(key) match {
+        case value: java.sql.Date =>
+          values += "\'" + TimeUtil.time2DateString("yyyy-MM-dd HH:mm:ss", value.getTime, TimeUtil.MILLISECOND) + "\',"
+        case _ =>
+          values += "?,"
+      }
+    }
+
+    sqlKey = sqlKey.substring(0, sqlKey.length - 1)
+    values = values.substring(0, values.length - 1)
+    val sql = s"insert into $table ($sqlKey) values($values)"
     val pstmt = connection.prepareStatement(sql)
-    pstmt.executeUpdate()
+    var index = 1
+    for (key <- keys) {
+      document.get(key) match {
+        case value: Integer =>
+          pstmt.setInt(index, value)
+        case value: java.lang.Long =>
+          pstmt.setLong(index, value)
+        case value: String =>
+          pstmt.setString(index, value)
+        case value: java.lang.Double =>
+          pstmt.setDouble(index, value)
+        case value: java.sql.Date =>
+          index -= 1
+        case _ =>
+          pstmt.setObject(index, document.get(key))
+      }
+      index += 1
+    }
+    try {
+      pstmt.executeUpdate()
+    } catch {
+      case e: Exception =>
+        document.append("PSQLException", e.printStackTrace())
+    }
+    JunhaiLog.documentClean2Json(document)
   }
 
   def select(sql: String): ResultSet = {
@@ -112,7 +153,8 @@ class GreenPlumSink(getConn: () => Connection) extends Serializable {
 
   def select(document: Document, table: String): Int = {
     var num = 0
-    val package_name = JunhaiLog.getString()
+    //    val package_name = JunhaiLog.getString()
+    1
   }
 
 

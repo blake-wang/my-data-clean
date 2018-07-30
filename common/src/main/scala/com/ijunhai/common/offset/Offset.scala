@@ -7,6 +7,8 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.streaming.kafka010.OffsetRange
 
+import scala.collection.JavaConversions._
+
 object Offset {
   def saveOffset(offsets: Array[OffsetRange], topic: String, groupId: String, redisSink: Broadcast[RedisSink]): Unit = {
     val offset_map: util.Map[String, String] = new util.HashMap[String, String]
@@ -21,7 +23,7 @@ object Offset {
     val init_offset_map: util.Map[String, String] = redisSink.value.hgetAll(groupId + "|" + topic)
     if (!init_offset_map.isEmpty) {
       for (brokerNameAndQueueId <- init_offset_map.keySet()) {
-        map.put(new TopicPartition(topic, brokerNameAndQueueId), init_offset_map.get(brokerNameAndQueueId).toLong)
+        map.put(new TopicPartition(topic, brokerNameAndQueueId.toInt), init_offset_map.get(brokerNameAndQueueId).toLong)
       }
     }
     map

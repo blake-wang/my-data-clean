@@ -6,6 +6,9 @@ import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 
 
 class HbaseSink(getConn: () => Connection) extends Serializable {
+  def get(AGENTTABLENAME: String, key: String, COLUMNFAMILY: String, LOGINTS: String, ORDERTS: String) = {
+
+  }
 
 
 }

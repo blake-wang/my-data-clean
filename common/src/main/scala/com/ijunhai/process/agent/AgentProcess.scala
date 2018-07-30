@@ -208,6 +208,7 @@ object AgentProcess extends Serializable {
       val doc = document.asInstanceOf[Document]
       (doc.getString(channel_id), osTypeMap)
     })
+    null
   }
 
 

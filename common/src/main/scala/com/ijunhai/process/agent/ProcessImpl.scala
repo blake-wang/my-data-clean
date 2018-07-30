@@ -6,6 +6,7 @@ import java.util.Date
 import com.ijunhai.common.TimeUtil
 import com.ijunhai.common.ip.{IP, IPAddress}
 import com.ijunhai.common.logsystem.JunhaiLog
+import com.ijunhai.process.CommProcess
 import com.ijunhai.process.agent.ChannelTransform.HWGameMap
 import com.ijunhai.process.agent.KafkaLogProcess._
 import com.ijunhai.storage.redis.RedisSink
@@ -14,30 +15,29 @@ import org.bson.Document
 
 object ProcessImpl extends Serializable {
 
-  def changePhase(doc: Document): (Document, Boolean) = {
-    val appId = JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.app_id)
-    val gameId = JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_id)
-    val document = new Document()
-    for (key <- doc.keySet()) {
-      if (JunhaiLog.game != key) {
-        document.put(key, doc.get(key))
-      }
-    }
-    val newGame = new Document()
-    newGame.put(JunhaiLog.game_id, gameId)
-    newGame.put(JunhaiLog.app_id, appId)
-    newGame.put(JunhaiLog.game_ver, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_ver))
-    newGame.put(JunhaiLog.game_name, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_name))
-    newGame.put(JunhaiLog.company_id, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.company_id))
-    document.put(JunhaiLog.game, newGame)
-    if (newGame.getString(JunhaiLog.app_id).equals("100000011")) {
-      //海外的特殊belong_game_id,走网页支付，直接过滤掉
-      (document, false)
-    } else {
-      (document, true)
-    }
-
-  }
+//  def changePhase(doc: Document): (Document, Boolean) = {
+//    val appId = JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.app_id)
+//    val gameId = JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_id)
+//    val document = new Document()
+//    for (key <- doc.keySet()) {
+//      if (JunhaiLog.game != key) {
+//        document.put(key, doc.get(key))
+//      }
+//    }
+//    val newGame = new Document()
+//    newGame.put(JunhaiLog.game_id, gameId)
+//    newGame.put(JunhaiLog.app_id, appId)
+//    newGame.put(JunhaiLog.game_ver, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_ver))
+//    newGame.put(JunhaiLog.game_name, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.game_name))
+//    newGame.put(JunhaiLog.company_id, JunhaiLog.getSecondColumnString(doc, JunhaiLog.game, JunhaiLog.company_id))
+//    document.put(JunhaiLog.game, newGame)
+//    if (newGame.getString(JunhaiLog.app_id).equals("100000011")) {
+//      //海外的特殊belong_game_id,走网页支付，直接过滤掉
+//      (document, false)
+//    } else {
+//      (document, true)
+//    }
+//  }
 
   def loginJoin(doc: Document,
                 source: String,
@@ -70,7 +70,8 @@ object ProcessImpl extends Serializable {
           doc.put(JunhaiLog.agent, agent)
           doc.put(JunhaiLog.game, game)
           JunhaiLog.getDocument(doc, JunhaiLog.device).put(JunhaiLog.os_type, bAcMap.value.getOrElse(channelId, ""))
-          changePhase(doc)
+//          changePhase(doc)
+          (doc,true)
         }
         case "dalanLoginSrc" =>
           val game = doc.get(JunhaiLog.game).asInstanceOf[Document]
@@ -91,7 +92,8 @@ object ProcessImpl extends Serializable {
 
           try {
             if (gameId.toInt < 128 && CommProcess.DALAN_CHANNEL.contains(channelId)) {
-              changePhase(doc)
+//              changePhase(doc)
+              (doc, true)
             } else {
               (doc, false)
             }
@@ -140,7 +142,7 @@ object ProcessImpl extends Serializable {
             //            game.put(JunhaiLog.company_id, companyId)
           }
           //提出haiwai渠道的数据
-          boolean = !JunhaiLog.hawaiChannelId.contains(doc.get(JunhaiLog.agent).asInstanceOf[Document].getString(JunhaiLog.channel_id))
+//          boolean = !JunhaiLog.hawaiChannelId.contains(doc.get(JunhaiLog.agent).asInstanceOf[Document].getString(JunhaiLog.channel_id))
           (doc, boolean)
         case _ =>
           (new Document(), false)

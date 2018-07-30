@@ -57,22 +57,23 @@ object saveFirstEvent {
       val values = redisSink.value.hmget(key,LOGINTS,ORDERTS)
       val redisLoginTs = values.get(0)
       val redisOrderTs = values.get(1)
-      val (loginTs, orderTs) = if (redisLoginTs == null) {
-        val map = hbaseSink.value.get(AGENTTABLENAME, key, COLUMNFAMILY, LOGINTS, ORDERTS)
-        val hbaseLoginTs = map.get(LOGINTS)
-        val hbaseOrderTs = map.get(ORDERTS)
-        if (hbaseLoginTs != "" && hbaseOrderTs != "") { //hbase有数据，redis没数据，则先插入redis
-          redisSink.value.hmset(key, map)
-        } else if (hbaseLoginTs != "") {
-          redisSink.value.hset(key, LOGINTS, hbaseLoginTs)
-        }
-        (hbaseLoginTs, hbaseOrderTs)
-      } else {
-        (redisLoginTs, if (redisOrderTs == null) "" else redisOrderTs)
-      }
-
-      val oldTs = if (event.equals(JunhaiLog.eventOrder)) orderTs else loginTs
+//      val (loginTs, orderTs) = if (redisLoginTs == null) {
+//        val map = hbaseSink.value.get(AGENTTABLENAME, key, COLUMNFAMILY, LOGINTS, ORDERTS)
+//        val hbaseLoginTs = map.get(LOGINTS)
+//        val hbaseOrderTs = map.get(ORDERTS)
+//        if (hbaseLoginTs != "" && hbaseOrderTs != "") { //hbase有数据，redis没数据，则先插入redis
+//          redisSink.value.hmset(key, map)
+//        } else if (hbaseLoginTs != "") {
+//          redisSink.value.hset(key, LOGINTS, hbaseLoginTs)
+//        }
+//        (hbaseLoginTs, hbaseOrderTs)
+//      } else {
+//        (redisLoginTs, if (redisOrderTs == null) "" else redisOrderTs)
+//      }
+//
+//      val oldTs = if (event.equals(JunhaiLog.eventOrder)) orderTs else loginTs
     }
+    true
   }
 
 

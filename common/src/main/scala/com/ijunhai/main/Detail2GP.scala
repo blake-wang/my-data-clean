@@ -4,7 +4,7 @@ import java.util
 import java.util.UUID
 
 import com.ijunhai.common.offset.Offset
-import com.ijunhai.process.agent.CommProcess
+import com.ijunhai.process.CommProcess
 import com.ijunhai.storage.greenplum.GreenPlumSink
 import com.ijunhai.storage.kafka.{KafkaSink, Save2Kafka}
 import com.ijunhai.storage.redis.{RedisSink, Save2Redis}
@@ -83,7 +83,16 @@ object Detail2GP {
       System.exit(1)
     }
 
-    CommProcess.detail2GP(kafkaStream.map(_.value()),kafkaSinkBroadcast,monitorGPSink,gpSink,redisSink)
+    CommProcess.detail2GP(kafkaStream.map(_.value()), kafkaSinkBroadcast, monitorGPSink, gpSink, redisSink)
 
+    kafkaStream.foreachRDD(rdd => {
+      if (!rdd.isEmpty()) {
+        topics.foreach(topic => {
+          Offset.saveOffset(rdd.asInstanceOf[HasOffsetRanges].offsetRanges, topic, group, redisSink)
+        })
+      }
+    })
+    ssc.start()
+    ssc.awaitTermination()
   }
 }

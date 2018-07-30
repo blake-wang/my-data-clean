@@ -31,7 +31,6 @@ class JunhaiLog {
   val server_date_hour = "server_date_hour"
 
 
-
   var sub_pf = ""
   var status = ""
   var server_first_date = ""
@@ -141,6 +140,26 @@ class JunhaiLog {
 }
 
 object JunhaiLog {
+
+  /**
+    * 一层清洗
+    * sql.Date  在Document中不能识别，所以需要清洗
+    *
+    * @param document
+    * @return
+    */
+  def documentClean2Json(document: Document): Document = {
+    val keys = document.keySet()
+    for (key <- keys) {
+      document.get(key) match {
+        case value: java.sql.Date =>
+          document.put(key, TimeUtil.time2DateString("yyyy-MM-dd HH:mm:ss", value.getTime, TimeUtil.MILLISECOND))
+        case _ =>
+      }
+    }
+    document
+  }
+
   val agentLoginSrc = "agentLoginSrc"
   val agentOldLoginSrc = "agentOldLoginSrc"
   val agentDBSrc = "agentDBSrc"
@@ -487,6 +506,7 @@ object JunhaiLog {
     }
     flag
   }
+
   def agentOldLog2Bson(log: String): (Document, Int, String) = {
 
     //NORMAL: [2018-01-08 12:11:04] CIP[119.54.199.236] CONTENT[{"user_id":"1000920627","channel_id":"10169","game_id":"136","channel_name":"h5agent","game_channel_id":""}]
@@ -533,7 +553,6 @@ object JunhaiLog {
     val ip = log.substring(log.indexOf(secondStr) + secondStr.length, log.indexOf(thirdStr) - 2)
     (Document.parse(activeLog), TimeUtil.dateString2Time("yyyy-MM-dd HH:mm:ss", time, TimeUtil.SECOND).toInt, ip)
   }
-
 
 
 }
