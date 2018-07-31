@@ -17,26 +17,26 @@ public class XMLUtil {
     public static Document xml2bson(ByteArrayOutputStream baos) throws JDOMException, IOException {
         Document json = new Document();
         InputStream is = new ByteArrayInputStream(baos.toByteArray());
-
         SAXBuilder sb = new SAXBuilder();
         org.jdom2.Document doc = sb.build(is);
         Element root = doc.getRootElement();
-        json.put(root.getName(),iterateElement(root));
+        json.put(root.getName(), iterateElement(root));
         return json;
 
     }
 
-    private static Object iterateElement(Element element) {
+    private static Document iterateElement(Element element) {
         List node = element.getChildren();
-        Element et ;
+        Element et;
         Document obj = new Document();
-        List list ;
+        List list;
         for (int i = 0; i < node.size(); i++) {
             list = new LinkedList();
             et = (Element) node.get(i);
             if (et.getTextTrim().equals("")) {
-                if (et.getChildren().size() == 0)
+                if (et.getChildren().size() == 0) {
                     continue;
+                }
                 if (obj.containsKey(et.getName())) {
                     list = (List) obj.get(et.getName());
                 }

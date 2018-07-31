@@ -26,16 +26,14 @@ public class HDFSUtil {
      */
     public static Document readConfigFromHdfs(String hdfs) throws IOException, InterruptedException, JDOMException {
         Configuration conf = new Configuration();
+        //获取fs
         FileSystem fs = FileSystem.get(URI.create(hdfs), conf, "hadoop");
-
         FSDataInputStream hdfsInStream = fs.open(new Path(hdfs));
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] ioBuffer = new byte[1024 * 1024];
         int readLen = hdfsInStream.read(ioBuffer);
-
         while (-1 != readLen) {
-            baos.write(ioBuffer, 0, readLen);
+            baos.write(ioBuffer,0,readLen);
             readLen = hdfsInStream.read(ioBuffer);
         }
         Document doc = XMLUtil.xml2bson(baos);
